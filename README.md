@@ -1,4 +1,4 @@
-# Henryk World Map
+# Henry World Map
 
 This application displays, on an interactive map, people named **Henry** (and its international variants), based on data from [Wikidata](https://www.wikidata.org/).
 
