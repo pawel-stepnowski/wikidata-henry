@@ -1,0 +1,41 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Example Border A",
+        "startYear": 1500,
+        "endYear": 1700
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [5.0, 45.0],
+          [5.0, 55.0],
+          [25.0, 55.0],
+          [25.0, 45.0],
+          [5.0, 45.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Example Border B",
+        "startYear": 1701,
+        "endYear": 1918
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [10.0, 40.0],
+          [10.0, 50.0],
+          [35.0, 50.0],
+          [35.0, 40.0],
+          [10.0, 40.0]
+        ]]
+      }
+    }
+  ]
+}
