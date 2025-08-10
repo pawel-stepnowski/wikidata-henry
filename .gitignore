@@ -1,0 +1,7 @@
+﻿.vs/
+node_modules/
+/data/people.jsonl
+/data/people.jsonl.gz
+/data/people_approximate.jsonl
+/data/people_exact.jsonl
+/data/places.jsonl

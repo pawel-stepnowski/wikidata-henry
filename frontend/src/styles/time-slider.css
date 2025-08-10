@@ -1,0 +1,13 @@
+.time-slider
+{
+    padding: 1rem;
+    background: #fff;
+    position: absolute;
+    bottom: 0;
+    /* 100vw includes scrollbar width and, with content-box, padding adds extra width */
+    box-sizing: border-box;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 10;
+}

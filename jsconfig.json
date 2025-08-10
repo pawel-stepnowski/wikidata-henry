@@ -1,0 +1,27 @@
+{
+    "compilerOptions":
+    {
+        "checkJs": true,
+        "noEmit": true,
+        "strict": true,
+        "target": "ES2022",
+        "module": "NodeNext",
+        "moduleResolution": "nodenext",
+        "allowJs": true,
+        "forceConsistentCasingInFileNames": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "exactOptionalPropertyTypes": true,
+        "useUnknownInCatchVariables": true
+    },
+    "exclude": ["node_modules"]
+}
