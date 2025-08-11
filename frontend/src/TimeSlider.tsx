@@ -3,17 +3,18 @@ import type React from 'react';
 import { Range, getTrackBackground } from 'react-range';
 
 type DivPropsWithRef = React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> };
-type RenderTrackParams = {
+type RenderTrackParams =
+{
     props: DivPropsWithRef;
     children: React.ReactNode;
     isDragged?: boolean;
 };
-type RenderThumbParams = {
+type RenderThumbParams =
+{
     props: DivPropsWithRef & { key?: React.Key };
     isDragged?: boolean;
     index?: number;
 };
-
 type TimeSliderProperties =
 {
     range: [number, number];
@@ -38,8 +39,8 @@ export default function TimeSlider({ range, min, max, onChange }: TimeSliderProp
     const isDraggingTrackRef = useRef(false);
     useEffect(() => { isDraggingTrackRef.current = isDraggingTrack; }, [isDraggingTrack]);
 
-    const mouseStartX = useRef<number | null>(null);
-    const rangeAtDragStart = useRef<[number, number] | null>(null);
+    const mouse_start_x = useRef<number | null>(null);
+    const range_at_drag_start = useRef<[number, number] | null>(null);
     const trackRef = useRef<HTMLDivElement>(null);
 
     // Throttle parent onChange to avoid expensive map refresh on every mouse move
@@ -47,7 +48,8 @@ export default function TimeSlider({ range, min, max, onChange }: TimeSliderProp
     useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
     const pendingRange = useRef<[number, number] | null>(null);
     const throttleId = useRef<number | null>(null);
-    const throttleMs = 50; // ~20fps updates to parent
+    const throttle_ms = 50; // ~20fps updates to parent
+
     const scheduleParentUpdate = useCallback((r: [number, number]) =>
     {
         pendingRange.current = r;
@@ -60,7 +62,7 @@ export default function TimeSlider({ range, min, max, onChange }: TimeSliderProp
             // trailing flush if user kept moving
             if (pendingRange.current) onChangeRef.current(pendingRange.current);
         },
-        throttleMs);
+        throttle_ms);
     },
     []);
 
@@ -68,35 +70,69 @@ export default function TimeSlider({ range, min, max, onChange }: TimeSliderProp
     {
         function onMouseMove(e: MouseEvent)
         {
-            if (!isDraggingTrackRef.current || mouseStartX.current === null || !rangeAtDragStart.current) return;
-            const deltaPx = e.clientX - mouseStartX.current;
+            if (!isDraggingTrackRef.current || mouse_start_x.current === null || !range_at_drag_start.current) return;
+            const delta_px = e.clientX - mouse_start_x.current;
+            const rect = trackRef.current?.getBoundingClientRect();
+            const track_width = rect?.width ?? 1;
+            const total = max - min;
+            const delta_years = Math.round((delta_px / track_width) * total);
+            const [start0, end0] = range_at_drag_start.current;
+            const width = end0 - start0;
+            const new_start = Math.max(min, Math.min(max - width, start0 + delta_years));
+            const new_end = new_start + width;
+            const next: [number, number] = [new_start, new_end];
+            setInternalRange(next);
+            scheduleParentUpdate(next);
+        }
+        function onTouchMove(e: TouchEvent)
+        {
+            if (!isDraggingTrackRef.current || mouse_start_x.current === null || !range_at_drag_start.current) return;
+            const t = e.touches[0];
+            if (!t) return;
+            const delta_px = t.clientX - mouse_start_x.current;
             const rect = trackRef.current?.getBoundingClientRect();
             const trackWidth = rect?.width ?? 1;
             const total = max - min;
-            const deltaYears = Math.round((deltaPx / trackWidth) * total);
-            const [start0, end0] = rangeAtDragStart.current;
+            const delta_years = Math.round((delta_px / trackWidth) * total);
+            const [start0, end0] = range_at_drag_start.current;
             const width = end0 - start0;
-            const newStart = Math.max(min, Math.min(max - width, start0 + deltaYears));
-            const newEnd = newStart + width;
-            const next: [number, number] = [newStart, newEnd];
+            const new_start = Math.max(min, Math.min(max - width, start0 + delta_years));
+            const new_end = new_start + width;
+            const next: [number, number] = [new_start, new_end];
             setInternalRange(next);
             scheduleParentUpdate(next);
+            // Prevent page scroll while dragging
+            e.preventDefault();
         }
         function onMouseUp()
         {
             if (!isDraggingTrackRef.current) return;
             setIsDraggingTrack(false);
-            mouseStartX.current = null;
-            rangeAtDragStart.current = null;
+            mouse_start_x.current = null;
+            range_at_drag_start.current = null;
             // Ensure parent gets the final range
             onChange(internalRange);
         }
+        function onTouchEnd()
+        {
+            if (!isDraggingTrackRef.current) return;
+            setIsDraggingTrack(false);
+            mouse_start_x.current = null;
+            range_at_drag_start.current = null;
+            onChange(internalRange);
+        }
         window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
         window.addEventListener('mouseup', onMouseUp);
+        window.addEventListener('touchend', onTouchEnd);
+        window.addEventListener('touchcancel', onTouchEnd);
         return () =>
         {
             window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('touchmove', onTouchMove);
             window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('touchend', onTouchEnd);
+            window.removeEventListener('touchcancel', onTouchEnd);
         };
     },
     [min, max, onChange, internalRange, scheduleParentUpdate]);
@@ -131,12 +167,46 @@ export default function TimeSlider({ range, min, max, onChange }: TimeSliderProp
                 // Start window drag only when clicking between thumbs (center)
                 e.preventDefault();
                 setIsDraggingTrack(true);
-                mouseStartX.current = e.clientX;
-                rangeAtDragStart.current = internalRange;
+                mouse_start_x.current = e.clientX;
+                range_at_drag_start.current = internalRange;
                 return; // Do NOT call react-range handler here
             }
             // Otherwise, let react-range perform its default behavior (jump/move nearest thumb)
             props.onMouseDown?.(e);
+        };
+        const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) =>
+        {
+            const target = e.target as Element | null;
+            if (target && target.closest('[data-range-thumb="true"]'))
+            {
+                // Let react-range handle thumb touch gestures
+                props.onTouchStart?.(e);
+                return;
+            }
+            const rect = trackRef.current?.getBoundingClientRect();
+            if (!rect)
+            {
+                props.onTouchStart?.(e);
+                return;
+            }
+            const t = e.touches[0];
+            if (!t) return;
+            const total = max - min;
+            const a = (internalRange[0] - min) / total * rect.width;
+            const b = (internalRange[1] - min) / total * rect.width;
+            const left = Math.min(a, b);
+            const right = Math.max(a, b);
+            const x = t.clientX - rect.left;
+            const inside = x >= left && x <= right;
+            if (inside)
+            {
+                e.preventDefault();
+                setIsDraggingTrack(true);
+                mouse_start_x.current = t.clientX;
+                range_at_drag_start.current = internalRange;
+                return;
+            }
+            props.onTouchStart?.(e);
         };
 
         // Compose our ref with react-range's internal ref to keep ResizeObserver working
@@ -157,7 +227,7 @@ export default function TimeSlider({ range, min, max, onChange }: TimeSliderProp
             cursor: isDraggingTrack ? 'grabbing' : 'pointer',
         };
 
-        return <div {...props} ref={assignRef} style={style} onMouseDown={onMouseDown}>{children}</div>;
+    return <div {...props} ref={assignRef} style={style} onMouseDown={onMouseDown} onTouchStart={onTouchStart}>{children}</div>;
     }
 
     function renderThumb({ props, index }: RenderThumbParams)
